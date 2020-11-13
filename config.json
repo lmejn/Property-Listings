@@ -1,0 +1,25 @@
+{
+    "credentials": {
+        "id": "id",
+        "secret": "secret"
+    },
+    "listingType":"Sale",
+    "propertyTypes": ["Apartment", "House", "Townhouse", "SemiDetached"],
+    "locations": [
+        {
+            "state":"State_1",
+            "region":"",
+            "area":"",
+            "suburb":"Suburb_1",
+            "postCode":"Postcode_1"
+        },
+        {
+            "state":"State_2",
+            "region":"",
+            "area":"",
+            "suburb":"Suburb_2",
+            "postCode":"Postcode_2",
+            "includeSurroundingSuburbs": "true"
+        }
+    ]
+}
