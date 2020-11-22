@@ -3,16 +3,30 @@ from domain import DomainAPI, to_dict
 import json, os
 import pandas as pd
 
-with open("config.json", 'r') as file:
-    config = json.load(file)
+def load_config():
+    with open("config.json", 'r') as file:
+        config = json.load(file)
+    return config
 
-api = DomainAPI(config["credentials"]["id"], config["credentials"]["secret"])
+
+def load_api():
+    config = load_config()
+    return DomainAPI(config["credentials"]["id"], config["credentials"]["secret"])
+
+
+def _get_listings(api, search_params):
+
+    data = api.find_all_listings(search_params, verbose=True)
+
+    df = pd.DataFrame([to_dict(d) for d in data if "listing" in d])
+    # df.set_index('id', inplace=True, drop=True)
+
+    return df
+
 
 def get_listings(api):
 
-    with open("config.json", 'r') as file:
-        config = json.load(file)
-
+    config = load_config()
 
     search_params = {
         "listingType": "Sale",
@@ -20,26 +34,46 @@ def get_listings(api):
         "locations": config["locations"]
     }
 
-    data = api.find_all_listings(search_params, verbose=True)
-
-    df = pd.DataFrame([to_dict(d) for d in data if "listing" in d])
-
+    df = _get_listings(api, search_params)
     df['Date Added'] = pd.to_datetime(pd.to_datetime('now').strftime('%Y-%m-%d'))
-
-    df.set_index('id', inplace=True, drop=True)
-    # del df['íd']
 
     return df
 
-new_listings = get_listings(api)
 
-listings_filename = "listings.csv"
+def get_listings_in_price_range(api, min_price=None, max_price=None):
 
-if(not os.path.exists(listings_filename)):
-    new_listings.to_csv(listings_filename)
+    config = load_config()
 
-else:
-    old_listings = pd.read_csv(listings_filename, index_col=0)
-    listings = pd.concat([old_listings, new_listings]).drop_duplicates()
+    search_params = {
+        "listingType": "Sale",
+        "propertyTypes": config["propertyTypes"],
+        "locations": config["locations"],
+    }
+    
+    if(min_price is not None):
+        search_params['minPrice'] = int(min_price)
 
-    listings.to_csv(listings_filename)
+    if(max_price is not None):
+        search_params['maxPrice'] = int(max_price)
+
+    return _get_listings(api, search_params)
+
+
+if __name__ == "__main__":
+
+    api = load_api()
+
+    new_listings = get_listings(api)
+
+    listings_filename = "listings.csv"
+
+    if(not os.path.exists(listings_filename)):
+        new_listings.to_csv(listings_filename)
+
+    else:
+        old_listings = pd.read_csv(listings_filename, index_col=0)
+        listings = pd.concat([old_listings, new_listings])
+
+        listings = listings[~listings.index.duplicated(keep="first")]
+
+        listings.to_csv(listings_filename)

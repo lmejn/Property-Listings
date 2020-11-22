@@ -33,9 +33,6 @@ class DomainAPI():
 
         if("pageSize" not in search_params):
             search_params["pageSize"] == 100
-
-        print(search_params)
-
         
         r = requests.post(url, headers=self.auth, json=search_params)
         self.total_n_queries += 1
